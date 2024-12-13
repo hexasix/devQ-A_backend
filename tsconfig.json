@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",              // Use the latest ECMAScript version
+    "module": "ESNext",              // Use ESNext module resolution
+    "moduleResolution": "node",      // Use Node.js module resolution
+    "strict": true,                  // Enable strict type checking
+    "esModuleInterop": true,         // Allows default imports from CommonJS modules
+    "forceConsistentCasingInFileNames": true, // Enforce consistent casing
+    "skipLibCheck": true,            // Skip library checking for faster builds
+    "outDir": "./dist",              // Output directory for compiled files
+    "rootDir": "./src",              // Root directory for source files
+    "allowSyntheticDefaultImports": true // Allow default imports for compatibility
+  },
+  "include": ["src/**/*.ts"],         // Include all TypeScript files in the src directory
+  "exclude": ["node_modules"]         // Exclude the node_modules directory
+}
+
