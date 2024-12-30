@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import User from "../models/userModel";
 import { IUser } from "../models/userModel";
 import { MongoError } from "mongodb";
+const checkIfEmailAddressValid = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
 // POST /auth/register
 export const register = async (req: Request, res: Response) => {
   try {
@@ -15,8 +19,7 @@ export const register = async (req: Request, res: Response) => {
     }
     //check if email is a valid email
     //if not return a 400 error
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!checkIfEmailAddressValid(email)) {
       res.status(400).json({ message: "Please provide a valid email" });
       return;
     }
@@ -54,3 +57,30 @@ export const getAllUsers = async (req: Request, res: Response) => {
     return
   }
 };
+
+// POST /auth/login
+export const login = async (req: Request, res: Response) => {
+  try{
+    const {email,password} = req.body as IUser
+    // Check if email and password are provided
+    //if not return a 400 error
+    if (!email || !password){
+      res.status(400).json({message: "Please provide email and password"})
+    }
+
+    const user = await User.findOne({email})
+    if (!user){
+      res.status(404).json({message: "User not found"})
+      return
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, user.password)
+    if (!isPasswordCorrect){
+      res.status(400).json({message: "Invalid password"})
+      return
+    }
+    res.status(200).json({message: "Login successful"})
+
+  }catch(err){
+    res.status(500).json(err)
+  }
+}
