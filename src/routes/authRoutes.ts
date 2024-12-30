@@ -1,12 +1,10 @@
 import express from "express";
-import { register,getAllUsers } from "../controllers/authController";
+import { register,getAllUsers,login } from "../controllers/authController";
 const router = express.Router();
 
 router.post("/register", register);
 
-router.post("/login", (req, res) => {
-  res.send("Login route");
-});
+router.post("/login", login)
 
 router.get("/users",getAllUsers) 
 export default router;
