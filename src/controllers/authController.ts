@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/userModel";
+import { IUser } from "../models/userModel";
 import { MongoError } from "mongodb";
 // POST /auth/register
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as IUser;
     // Check if email and password are provided
     //if not return a 400 error
     if (!email || !password) {
@@ -38,5 +39,18 @@ export const register = async (req: Request, res: Response) => {
     // If the error is not a validation error or a duplicate key error, return a 500 error
     res.status(500).json(err);
     return;
+  }
+};
+
+// GET /auth/users
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await User.find({});
+    const usersEmailArray = users.map((user)=>user.email)
+    res.status(200).json(usersEmailArray);
+    return 
+  } catch (err) {
+    res.status(200).json(err);
+    return
   }
 };
