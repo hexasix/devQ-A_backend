@@ -6,6 +6,7 @@ import { IUser } from "../models/userModel";
 import { MongoError } from "mongodb";
 import { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } from "../config/env";
 import refreshTokenModel from "../models/refreshTokenModel";
+import { errorResponseHandler } from "../utils/errorHandlers";
 type tJwt = {
   userId: string;
   iat: number;
@@ -44,12 +45,12 @@ export const refreshToken = async (req: Request, res: Response) => {
     //3.1 check if it has been revoked or not
     if (tokenDoc.revoked) {
       res.status(403).json({ error: "The refresh token has been revoked." });
-      return
+      return;
     }
     //3.2 check if the token has been expired or not
     if (new Date() > tokenDoc.expiresAt) {
       res.status(403).json({ error: "The refresh token has expired." });
-      return
+      return;
     }
     //4. Generate new access token
     const newAccessToken = jwt.sign(
@@ -59,7 +60,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     );
     res.status(200).json({ accessToken: newAccessToken });
   } catch (err) {
-    res.status(500).json({error:"Unexpected error."})
+    res.status(500).json({ error: "Unexpected error." });
   }
 };
 // POST /auth/register
@@ -114,4 +115,66 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 // POST /auth/login
-export const login = async (req: Request, res: Response) => {};
+export const login = async (req: Request, res: Response) => {
+  try {
+    //1. verify the email and the password
+    const { email, password } = req.body;
+    // if email or password does not exist, raise an error
+    if (!email || !password) {
+      res
+        .status(400)
+        .json({ error: "Both email and password are required to login." });
+      return;
+    }
+    // go to the db and compare the passwords
+    const user = await User.findOne({ email });
+    // if user does not found in the db. Raise an error
+    if (!user) {
+      res.status(401).json({ error: "Invalid credential!" });
+      console.log(`${email} does not exist in database`);
+      return;
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      errorResponseHandler(res, 401, "Invalid credential!");
+      return;
+    }
+    //2. Generate an access token and a refresh token for the user
+    const accessToken = jwt.sign(
+      { userId: user._id.toString() },
+      JWT_ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user._id.toString() },
+      JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+    //3. Store the refresh token to the db
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 7);
+    await refreshTokenModel.create({
+      user: user._id,
+      expiresAt: expirationDate,
+      token: refreshToken,
+      revoked: false,
+    });
+    //4. send reponse with tokens
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+      },
+    });
+    return;
+  } catch (err) {
+    console.log("login error ->", err);
+    errorResponseHandler(res, 500, "Internal server error");
+    return;
+  }
+};
+
+//POST /auth/logout
+export const logout = async (req: Request, res: Response) => {};
