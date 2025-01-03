@@ -177,4 +177,27 @@ export const login = async (req: Request, res: Response) => {
 };
 
 //POST /auth/logout
-export const logout = async (req: Request, res: Response) => {};
+export const logout = async (req: Request, res: Response) => {
+  //Invalid the refresh Token
+  try {
+    const { token } = req.body;
+    if (!token) {
+      errorResponseHandler(res, 400, "No refresh token provided");
+      return;
+    }
+    // 1. Find the token in the db and invalid it
+    const tokenDoc = await refreshTokenModel.findOne({ token });
+    if (!tokenDoc) {
+      errorResponseHandler(res, 400, "Token not found in the DB!");
+      return;
+    }
+    tokenDoc.revoked = true;
+    await tokenDoc.save();
+    // 2. send response to notify logout successfully
+    res.status(200).json({ message: "Logged out successfully." });
+    return;
+  } catch (err) {
+    console.log("logout error ->", err);
+    errorResponseHandler(res, 500, "Internal server error.");
+  }
+};
