@@ -3,9 +3,7 @@ import { register, getAllUsers, login, refreshToken } from "../controllers/authC
 const router = express.Router();
 
 router.post("/register", register);
-
 router.post("/login", login);
-
 router.post("/refresh-token", refreshToken);
 router.get("/users", getAllUsers);
 export default router;
