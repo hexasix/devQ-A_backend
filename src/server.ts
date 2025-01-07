@@ -5,13 +5,13 @@ import morgan from "morgan";
 import { PORT } from "./config/env";
 import connectDB from "./config/db";
 const app = express();
-const port = PORT ;
+const port = PORT;
 
 app.use(express.json());
 app.use(cors());
 app.use(morgan("dev"));
 app.use("/auth", authRoutes);
-connectDB()
+connectDB();
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
